@@ -12,9 +12,11 @@ SRC_CURRENCY_CODE = os.environ.get("SRC_CURRENCY_CODE", "BTC")
 DEST_CURRENCY_CODE = os.environ.get("DEST_CURRENCY_CODE", "USD")
 API_KEY = os.environ.get("API_KEY", "9D572214-1DE2-44D0-A4F0-29A944203BF7")
 DATE_TIME_LOG_FORMAT = os.environ.get("DATE_TIME_LOG_FORMAT", "%Y-%m-%d-%H-%M-%S")
-LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", "/tmp/bitcoin-app.log")
-LOG_FREQUENCY = os.environ.get("LOG_FREQUENCY", "1")
-S3_BUCKET = os.environ.get("S3_BUCKET", "")
+LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", f"/tmp/bitcoin-app-{dt.now().strftime('%Y-%m-%d-%H-%M')}.log")
+LOG_FREQUENCY = int(os.environ.get("LOG_FREQUENCY", "1"))
+RUN_TIMEOUT = int(os.environ.get("RUN_TIMEOUT", "30"))
+S3_BUCKET = os.environ.get("S3_BUCKET", "aqua-test-logs")
+
 
 
 def get_exchange_rate():
@@ -57,8 +59,9 @@ def get_logger(log_file_path=None):
 
     return logging.getLogger(log_file_path)
 
+
 def send_logs_to_s3():
-    command = f"aws s3 cp {LOG_FILE_PATH} s3://"
+    command = f"aws s3 cp {LOG_FILE_PATH} s3://{S3_BUCKET}/{dt.now().strftime('%Y-%m-%d')}/{LOG_FILE_PATH.split('/')[-1]}"
     with Popen(command,
                stdin=PIPE,
                stdout=PIPE,
@@ -69,12 +72,21 @@ def send_logs_to_s3():
         print(stderr)
         print(stdout)
 
+
 if __name__ == '__main__':
     data = get_exchange_rate()
     logger = get_logger(LOG_FILE_PATH)
 
-    i = 0
-    while i <= 30:
+    start_time = time.perf_counter()
+    while True:
         log_dt = dt.now().strftime(DATE_TIME_LOG_FORMAT)
         logger.info(f"{log_dt} - {round(data['rate'], 3)} {DEST_CURRENCY_CODE}")
         time.sleep(int(LOG_FREQUENCY))
+
+        if int(time.perf_counter() - start_time) >= RUN_TIMEOUT:
+            break
+
+    print(f"Took {round((time.perf_counter() - start_time),2)} seconds to complete.")
+
+    send_logs_to_s3()
+    exit(0)
