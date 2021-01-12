@@ -18,19 +18,30 @@ RUN_TIMEOUT = int(os.environ.get("RUN_TIMEOUT", "30"))
 S3_BUCKET = os.environ.get("S3_BUCKET", "aqua-test-logs")
 
 
-
-def get_exchange_rate():
+def get_exchange_rate(logger):
     url = f"{API_URL}/{RESOURCE_URI}/{SRC_CURRENCY_CODE}/{DEST_CURRENCY_CODE}"
     headers = {'X-CoinAPI-Key' : API_KEY}
-    # response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers)
 
-    response = {
-      "time": "2021-01-11T15:19:06.2089000Z",
-      "asset_id_base": "BTC",
-      "asset_id_quote": "USD",
-      "rate": 32807.852049416152513191739688
-    }
-    return response
+    try:
+        if response.status_code == 200:
+            data = response.json()
+        elif response.status_code == 429:
+            logger.info("Exceeded rate limit for the service")
+            return {}
+        else:
+            return {}
+    except Exception as e:
+        print(e)
+        return {}
+
+    # return {
+    #   "time": "2021-01-11T15:19:06.2089000Z",
+    #   "asset_id_base": "BTC",
+    #   "asset_id_quote": "USD",
+    #   "rate": 32807.852049416152513191739688
+    # }
+    return data
 
 
 def get_logger(log_file_path=None):
@@ -74,13 +85,14 @@ def send_logs_to_s3():
 
 
 if __name__ == '__main__':
-    data = get_exchange_rate()
     logger = get_logger(LOG_FILE_PATH)
 
     start_time = time.perf_counter()
     while True:
         log_dt = dt.now().strftime(DATE_TIME_LOG_FORMAT)
-        logger.info(f"{log_dt} - {round(data['rate'], 3)} {DEST_CURRENCY_CODE}")
+        data = get_exchange_rate(logger)
+        if data.get("rate", ""):
+            logger.info(f"{log_dt} - {round(data['rate'], 3)} {DEST_CURRENCY_CODE}")
         time.sleep(int(LOG_FREQUENCY))
 
         if int(time.perf_counter() - start_time) >= RUN_TIMEOUT:
