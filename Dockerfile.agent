@@ -17,6 +17,6 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 
 RUN apt-get update -y && apt-get install -y docker-ce-cli
 
-# workaround, need proper user permissions for jenkins user
+# need proper user permissions for jenkins user
 RUN groupadd docker && usermod -aG docker jenkins 
 USER jenkins
