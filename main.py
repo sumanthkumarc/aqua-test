@@ -92,7 +92,7 @@ if __name__ == '__main__':
         log_dt = dt.now().strftime(DATE_TIME_LOG_FORMAT)
         data = get_exchange_rate(logger)
         if data.get("rate", ""):
-            logger.info(f"{log_dt} - {round(data['rate'], 3)} {DEST_CURRENCY_CODE}")
+            logger.info(f"{log_dt} - 1 {SRC_CURRENCY_CODE} = {round(data['rate'], 3)} {DEST_CURRENCY_CODE}")
         time.sleep(int(LOG_FREQUENCY))
 
         if int(time.perf_counter() - start_time) >= RUN_TIMEOUT:
