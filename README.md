@@ -73,17 +73,6 @@ HTTP GET - https://rest.coinapi.io/v1/exchangerate/BTC/USD?apikey=<API_KEY>
 5. Build custom jenkins agent - docker build -f Dockerfile.agent -t test:1.0 . and push to ecr.
 6. Ensure proper IAM role for ec2 instances to pull images and push to S3.
 
-You can access entire setup at http://3.21.223.198:8080/job/test-job
-```
-Username: admin
-password: QnQ1c1czTlAqeHMm
-```
-**NOTE: The password above is in base64 format. Decode it using below command on linux:**
-```
-echo -n "QnQ1c1czTlAqeHMm" | base64 -d
-```
- 
-I know this isn't secure in anyway but was just paranoid putting password in plain text.
 
 
 ### Problems faced:
